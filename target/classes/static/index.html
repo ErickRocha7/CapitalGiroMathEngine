@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>CapitalGiroMathEngine - Painel de Auditoria</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f6f9; }
+        .tabs { display: flex; margin-bottom: 20px; }
+        .tab-button { padding: 12px 24px; cursor: pointer; background: #e0e0e0; border: none; font-weight: bold; }
+        .tab-button.active { background: #007bff; color: white; }
+        .tab-content { display: none; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tab-content.active { display: block; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input, select { padding: 8px; width: 250px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        pre { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+    <h2>CapitalGiroMathEngine — Hub de Auditoria e Cálculos</h2>
+    
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('simulacao')">1. Simulação Completa (Pré/Pós)</button>
+        <button class="tab-button" onclick="switchTab('antecipacao')">2. Liquidação Antecipada</button>
+        <button class="tab-button" onclick="switchTab('atraso')">3. Parcela em Atraso</button>
+    </div>
+
+    <!-- ABA 1: SIMULAÇÃO -->
+    <div id="simulacao" class="tab-content active">
+        <h3>Simular Cronograma de Contrato</h3>
+        <div class="form-group">
+            <label>Principal (PV):</label>
+            <input type="number" id="sim-pv" value="100000">
+        </div>
+        <div class="form-group">
+            <label>Prazo (Meses):</label>
+            <input type="number" id="sim-prazo" value="12">
+        </div>
+        <div class="form-group">
+            <label>Tipo de Taxa:</label>
+            <select id="sim-tipo">
+                <option value="POS">Pós-Fixada (CDI)</option>
+                <option value="PRE">Prefixada</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Percentual do CDI (%):</label>
+            <input type="number" id="sim-cdi" value="110">
+        </div>
+        <div class="form-group">
+            <label>Spread Mensal (%):</label>
+            <input type="number" id="sim-spread" value="1.5">
+        </div>
+        <div class="form-group">
+            <label>Sistema de Amortização:</label>
+            <select id="sim-sistema">
+                <option value="PRICE">Tabela Price Recalculada</option>
+                <option value="SAC">SAC Pós-Fixado</option>
+            </select>
+        </div>
+        <button onclick="executarSimulacao()">Gerar Fluxo e Calcular CET</button>
+        <h4>Resultado da API:</h4>
+        <pre id="output-simulacao">Clique no botão para processar...</pre>
+    </div>
+
+    <!-- ABA 2: ANTECIPAÇÃO -->
+    <div id="antecipacao" class="tab-content">
+        <h3>Cálculo de Deságio a Valor Presente</h3>
+        <div class="form-group">
+            <label>Data de Corte para Quitação:</label>
+            <input type="date" id="ant-data" value="2026-11-15">
+        </div>
+        <button onclick="executarAntecipacao()">Calcular Valor de Quitação</button>
+        <h4>Resultado da API:</h4>
+        <pre id="output-antecipacao">Aguardando parâmetros do contrato definidos na Aba 1...</pre>
+    </div>
+
+    <!-- ABA 3: ATRASO -->
+    <div id="atraso" class="tab-content">
+        <h3>Recálculo de Parcela Vencida com Encargos</h3>
+        <div class="form-group">
+            <label>Valor da Prestação Original:</label>
+            <input type="number" id="atr-valor" value="9455.96">
+        </div>
+        <div class="form-group">
+            <label>Data de Vencimento:</label>
+            <input type="date" id="atr-venc" value="2026-06-10">
+        </div>
+        <div class="form-group">
+            <label>Data Efetiva de Pagamento:</label>
+            <input type="date" id="atr-pag" value="2026-06-25">
+        </div>
+        <button onclick="executarAtraso()">Calcular Multa e Mora</button>
+        <h4>Resultado da API:</h4>
+        <pre id="output-atraso">Clique no botão para processar encargos...</pre>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function executarSimulacao() {
+            const payload = {
+                principal: parseFloat(document.getElementById('sim-pv').value),
+                prazoMeses: parseInt(document.getElementById('sim-prazo').value),
+                sistema: document.getElementById('sim-sistema').value,
+                tipoTaxa: document.getElementById('sim-tipo').value,
+                taxaPre: 0,
+                percentCdi: parseFloat(document.getElementById('sim-cdi').value),
+                spreadMensal: parseFloat(document.getElementById('sim-spread').value),
+                iofFinanciado: true,
+                iofTotal: 2500.0,
+                dataLiberacao: "2026-06-20"
+            };
+            const response = await fetch('/api/simular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            document.getElementById('output-simulacao').innerText = JSON.stringify(data, null, 2);
+        }
+
+        async function executarAntecipacao() {
+            const payload = {
+                principal: parseFloat(document.getElementById('sim-pv').value),
+                prazoMeses: parseInt(document.getElementById('sim-prazo').value),
+                sistema: document.getElementById('sim-sistema').value,
+                tipoTaxa: document.getElementById('sim-tipo').value,
+                taxaPre: 0,
+                percentCdi: parseFloat(document.getElementById('sim-cdi').value),
+                spreadMensal: parseFloat(document.getElementById('sim-spread').value),
+                iofFinanciado: true,
+                iofTotal: 2500.0,
+                dataLiberacao: "2026-06-20"
+            };
+            const dataCorte = document.getElementById('ant-data').value;
+            const response = await fetch(`/api/antecipacao/desconto?dataCorteStr=${dataCorte}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            document.getElementById('output-antecipacao').innerText = JSON.stringify(data, null, 2);
+        }
+
+        async function executarAtraso() {   // CORRIGIDO de "ejecutarAtraso"
+            const payload = {
+                valorPrestacao: parseFloat(document.getElementById('atr-valor').value),
+                dataVencimento: document.getElementById('atr-venc').value,
+                dataPagamento: document.getElementById('atr-pag').value
+            };
+            const response = await fetch('/api/parcela/vencida', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            document.getElementById('output-atraso').innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
