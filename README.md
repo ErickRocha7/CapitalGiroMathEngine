@@ -124,7 +124,7 @@ src/main/java/com/capitalgiromath/capitalgiromathengine/
 
 ## 👤 Autor
 
-* **Erick Rocha** - [LinkedIn](seu-link-aqui) • [GitHub](https://github.com/ErickRocha7)
+* **Erick Rocha** - [LinkedIn]([seu-link-aqui](https://www.linkedin.com/in/erickdelimarocha/)) • [GitHub](https://github.com/ErickRocha7)
 
 ---
 *Este projeto foi desenvolvido com foco em Engenharia de Software voltada ao Mercado Financeiro e Perícias Contratuais.*
